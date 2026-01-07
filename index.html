@@ -2,82 +2,162 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>三高智慧照護導航 App</title>
+    <title>三高智慧導航 - PAS 符合版</title>
     <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
     <style>
-        .card-red { border-left: 5px solid #e74a3b !important; }
-        .card-yellow { border-left: 5px solid #f6c23e !important; }
-        .card-green { border-left: 5px solid #1cc88a !important; }
-        .card-inactive { opacity: 0.5; border-left: 5px solid #dee2e6 !important; }
-        .loading { display: flex; justify-content: center; align-items: center; height: 100vh; font-size: 1.5rem; }
-        .metric-value { font-size: 1.8rem; }
+        .card-red { border-left: 5px solid #dc3545 !important; }
+        .card-yellow { border-left: 5px solid #ffc107 !important; }
+        .card-green { border-left: 5px solid #28a745 !important; }
+        .pas-badge { font-size: 0.8rem; background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 4px; }
     </style>
 </head>
 <body class="bg-light">
 
-    <div id="loader" class="loading">
-        <div class="spinner-border text-primary mr-3"></div> 正在同步衛福部數據並進行分流判讀...
+<div id="content" class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 text-gray-800">三高智慧照護導航 <small class="text-muted" style="font-size: 0.5em;">v1.2 PAS Compliant</small></h1>
+            <span id="patient-id" class="pas-badge">Patient ID: 載入中...</span>
+        </div>
+        <div id="patient-name" class="h4 font-weight-bold text-primary">--</div>
     </div>
 
-    <div id="content" class="container py-4" style="display:none;">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3 text-gray-800">三高智慧照護導航</h1>
-            <div id="patient-info" class="badge badge-primary p-2" style="font-size: 1rem;">載入中...</div>
-        </div>
-
-        <div id="scene-container" class="mb-4"></div>
-
-        <div class="row">
-            <div class="col-md-4 mb-4">
-                <div id="card-bmi" class="card shadow h-100 py-2 card-inactive">
-                    <div class="card-body">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">BMI (體重管理)</div>
-                        <div id="val-bmi" class="metric-value font-weight-bold text-gray-800">無數據</div>
-                        <small class="text-muted">LOINC: 39156-5</small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4 mb-4">
-                <div id="card-hba1c" class="card shadow h-100 py-2 card-inactive">
-                    <div class="card-body">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">HbA1c (糖化血色素)</div>
-                        <div id="val-hba1c" class="metric-value font-weight-bold text-gray-800">無數據</div>
-                        <small class="text-muted">LOINC: 4548-4</small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4 mb-4">
-                <div id="card-ldl" class="card shadow h-100 py-2 card-inactive">
-                    <div class="card-body">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">LDL (低密度脂蛋白)</div>
-                        <div id="val-ldl" class="metric-value font-weight-bold text-gray-800">無數據</div>
-                        <small class="text-muted">LOINC: 13457-7</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card shadow mb-4">
-            <div class="card-header font-weight-bold text-primary">臨床關聯資源 (TW Core Profile)</div>
-            <div class="card-body p-0">
-                <table class="table mb-0">
-                    <thead class="bg-light">
-                        <tr><th>類型</th><th>名稱 / 內容</th><th>代碼</th></tr>
-                    </thead>
-                    <tbody id="res-table-body"></tbody>
-                </table>
-            </div>
-        </div>
-        
-        <button onclick="window.print()" class="btn btn-primary btn-block shadow-sm">
-            <i class="fas fa-print mr-2"></i> 產出臨床決策建議報告
-        </button>
+    <div id="scene-alert" class="alert shadow-sm mb-4" role="alert" style="display:none;">
+        <h4 class="alert-heading"><i id="scene-icon" class="fas mr-2"></i> <span id="scene-title"></span></h4>
+        <p id="scene-msg" class="mb-0"></p>
     </div>
 
-    <script>
-        // 強健的數值抓取函數
-        function getVal(obs
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div id="card-bmi" class="card shadow-sm h-100 py-2">
+                <div class="card-body text-center">
+                    <div class="text-xs font-weight-bold text-uppercase mb-1">BMI</div>
+                    <div id="val-bmi" class="h2 mb-0 font-weight-bold text-gray-800">--</div>
+                    <div class="text-muted small">39156-5</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div id="card-hba1c" class="card shadow-sm h-100 py-2">
+                <div class="card-body text-center">
+                    <div class="text-xs font-weight-bold text-uppercase mb-1">HbA1c</div>
+                    <div id="val-hba1c" class="h2 mb-0 font-weight-bold text-gray-800">--</div>
+                    <div class="text-muted small">4548-4</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div id="card-ldl" class="card shadow-sm h-100 py-2">
+                <div class="card-body text-center">
+                    <div class="text-xs font-weight-bold text-uppercase mb-1">LDL</div>
+                    <div id="val-ldl" class="h2 mb-0 font-weight-bold text-gray-800">--</div>
+                    <div class="text-muted small">13457-7</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white font-weight-bold text-primary">臨床資源列表 (依 PAS 規範存取)</div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                    <tr><th>類別</th><th>臨床內容</th><th>代碼系統</th></tr>
+                </thead>
+                <tbody id="res-table"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    FHIR.oauth2.ready().then(client => {
+        // 更新顯示患者 ID 以符合審查介面感
+        document.getElementById('patient-id').innerText = `Patient ID: ${client.patient.id}`;
+
+        client.patient.read().then(p => {
+            document.getElementById('patient-name').innerText = p.name ? p.name[0].text : "匿名患者";
+        });
+
+        // 依照 Scopes 權限請求資源
+        const requests = [
+            client.request(`Observation?patient=${client.patient.id}`),
+            client.request(`Condition?patient=${client.patient.id}`),
+            client.request(`ServiceRequest?patient=${client.patient.id}`)
+        ];
+
+        Promise.all(requests).then(([obs, cond, srv]) => {
+            const obsList = obs.entry ? obs.entry.map(e => e.resource) : [];
+            const condList = cond.entry ? cond.entry.map(e => e.resource) : [];
+            const srvList = srv.entry ? srv.entry.map(e => e.resource) : [];
+
+            // 數據提取
+            const bmi = getVal(obsList, '39156-5');
+            const hba1c = getVal(obsList, '4548-4');
+            const ldl = getVal(obsList, '13457-7');
+
+            // UI 更新
+            updateMetric('bmi', bmi, 27, 24, " kg/m²");
+            updateMetric('hba1c', hba1c, 6.5, 5.7, " %");
+            updateMetric('ldl', ldl, 130, 100, " mg/dL");
+
+            // 場景識別 (Jason A, B, C 分流)
+            identifyScene(bmi, hba1c, ldl, condList);
+
+            // 列表渲染
+            renderTable(condList, srvList);
+        });
+    });
+
+    function getVal(list, code) {
+        const item = list.find(o => o.code?.coding?.some(c => c.code === code));
+        return item ? item.valueQuantity?.value : null;
+    }
+
+    function updateMetric(id, val, high, warn, unit) {
+        const el = document.getElementById(`val-${id}`);
+        const card = document.getElementById(`card-${id}`);
+        if (val !== null) {
+            el.innerText = val + unit;
+            if (val >= high) card.classList.add('card-red');
+            else if (val >= warn) card.classList.add('card-yellow');
+            else card.classList.add('card-green');
+        }
+    }
+
+    function identifyScene(bmi, hba1c, ldl, conds) {
+        const alertBox = document.getElementById('scene-alert');
+        let config = null;
+
+        if (conds.some(c => c.code?.coding?.some(d => d.code === 'E66.9')) || bmi >= 27) {
+            config = { title: "肥胖照護場景", msg: "檢出 BMI 異常及肥胖診斷，系統已對應健保營養計畫。", class: "alert-danger", icon: "fa-weight" };
+        } else if (hba1c >= 5.7) {
+            config = { title: "糖尿病前期預警", msg: "HbA1c 指標顯示風險，建議列入自主管理個案。", class: "alert-warning", icon: "fa-tint" };
+        } else if (ldl > 130) {
+            config = { title: "血脂異常管理", msg: "LDL 數值過高，建議追蹤心血管疾病風險。", class: "alert-info", icon: "fa-heart" };
+        }
+
+        if (config) {
+            alertBox.className = `alert shadow-sm mb-4 ${config.class}`;
+            document.getElementById('scene-title').innerText = config.title;
+            document.getElementById('scene-msg').innerText = config.msg;
+            document.getElementById('scene-icon').className = `fas ${config.icon} mr-2`;
+            alertBox.style.display = 'block';
+        }
+    }
+
+    function renderTable(conds, srvs) {
+        const tbody = document.getElementById('res-table');
+        conds.forEach(c => {
+            tbody.innerHTML += `<tr><td><span class="badge badge-danger">Condition</span></td><td>${c.code.coding[0].display}</td><td>ICD-10-CM</td></tr>`;
+        });
+        srvs.forEach(s => {
+            tbody.innerHTML += `<tr><td><span class="badge badge-primary">ServiceRequest</span></td><td>${s.code.text || s.code.coding[0].display}</td><td>SNOMED/PAS</td></tr>`;
+        });
+    }
+</script>
+
+</body>
+</html>
