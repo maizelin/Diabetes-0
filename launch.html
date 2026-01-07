@@ -1,14 +1,38 @@
-FHIR.oauth2.authorize({
-    "clientId": "your_client_id", // 您的 Sandbox Client ID
-    "scope": [
-        "openid", 
-        "profile", 
-        "launch", 
-        "online_access", 
-        "patient/Patient.read",
-        "patient/Observation.read",
-        "patient/Condition.read",
-        "patient/ServiceRequest.read" // 健保 PAS 常用於讀取醫囑
-    ].join(" "),
-    "redirectUri": "https://maizelin.github.io/Diabetes-0/index.html"
-});
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>SMART Launching...</title>
+    <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
+</head>
+<body>
+    <script>
+        FHIR.oauth2.authorize({
+            // 1. 請確認此 Client ID 與你在 Sandbox 註冊的一致
+            "clientId": "your_client_id_here", 
+
+            // 2. 依照 PAS Scopes 規範定義精確權限
+            "scope": [
+                "openid",
+                "profile",
+                "launch",
+                "online_access",
+                "patient/Patient.read",
+                "patient/Observation.read",
+                "patient/Condition.read",
+                "patient/ServiceRequest.read" // 關鍵：符合事前審查醫囑讀取權限
+            ].join(" "),
+
+            // 3. 授權成功後的跳轉目標
+            "redirectUri": "index.html", 
+            
+            // 4. 也可以指定完成後的完整路徑
+            // "redirectUri": "https://maizelin.github.io/Diabetes-0/index.html"
+        });
+    </script>
+    <div style="text-align: center; margin-top: 50px; font-family: sans-serif;">
+        <h2>正在與衛福部 FHIR 伺服器進行安全連線...</h2>
+        <p>正在請求 PAS 規範之臨床存取權限</p>
+    </div>
+</body>
+</html>
