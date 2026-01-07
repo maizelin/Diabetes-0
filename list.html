@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>智慧診間 - 病患清單</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .patient-card { cursor: pointer; transition: 0.3s; border-radius: 15px; overflow: hidden; }
+        .patient-card:hover { transform: translateY(-10px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+        .card-A { border-top: 8px solid #e74a3b; }
+        .card-B { border-top: 8px solid #f6c23e; }
+        .card-C { border-top: 8px solid #4e73df; }
+    </style>
+</head>
+<body class="bg-light">
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4 font-weight-bold text-primary">三高智慧導航系統</h1>
+        <p class="lead">請選擇看診對象以啟動 SMART on FHIR 數據導航</p>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card patient-card shadow card-A h-100" onclick="launchApp('690715')">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-md fa-3x text-danger mb-3"></i>
+                    <h4 class="font-weight-bold">Jason Lin (A)</h4>
+                    <span class="badge badge-danger mb-3 p-2">肥胖管理場景</span>
+                    <p class="text-muted small">主要關注：BMI 指標與代謝風險<br>Patient ID: 690715</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card patient-card shadow card-B h-100" onclick="launchApp('690718')">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-md fa-3x text-warning mb-3"></i>
+                    <h4 class="font-weight-bold">Jason Lin (B)</h4>
+                    <span class="badge badge-warning mb-3 p-2 text-dark">糖尿病前期預警</span>
+                    <p class="text-muted small">主要關注：HbA1c 早期風險判讀<br>Patient ID: 690718</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card patient-card shadow card-C h-100" onclick="launchApp('690720')">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-md fa-3x text-primary mb-3"></i>
+                    <h4 class="font-weight-bold">Jason Chen (C)</h4>
+                    <span class="badge badge-primary mb-3 p-2">高血脂風險管理</span>
+                    <p class="text-muted small">主要關注：LDL 膽固醇與醫囑計畫<br>Patient ID: 690720</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function launchApp(patientId) {
+        // 模擬從 EMR 系統啟動，傳遞病人 ID 與伺服器位置
+        const iss = "https://thas.mohw.gov.tw/v/r4/fhir";
+        // 導向 launch 頁面
+        window.location.href = `launch.html?iss=${encodeURIComponent(iss)}&patientId=${patientId}`;
+    }
+</script>
+</body>
+</html>

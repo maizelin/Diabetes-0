@@ -2,162 +2,132 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>三高智慧導航 - PAS 符合版</title>
+    <title>三高智慧導航 - 臨床儀表板</title>
     <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
     <style>
-        .card-red { border-left: 5px solid #dc3545 !important; }
-        .card-yellow { border-left: 5px solid #ffc107 !important; }
-        .card-green { border-left: 5px solid #28a745 !important; }
-        .pas-badge { font-size: 0.8rem; background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 4px; }
+        .card-red { border-left: 6px solid #dc3545 !important; }
+        .card-yellow { border-left: 6px solid #ffc107 !important; }
+        .card-green { border-left: 6px solid #28a745 !important; }
+        .card-blue { border-left: 6px solid #007bff !important; }
+        .metric-val { font-size: 2.2rem; font-weight: bold; }
     </style>
 </head>
 <body class="bg-light">
 
 <div id="content" class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 text-gray-800">三高智慧照護導航 <small class="text-muted" style="font-size: 0.5em;">v1.2 PAS Compliant</small></h1>
-            <span id="patient-id" class="pas-badge">Patient ID: 載入中...</span>
+    <div class="card shadow-sm border-0 mb-4 bg-primary text-white">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+                <h2 id="p-name" class="mb-0">載入中...</h2>
+                <span id="p-id" class="badge badge-light mt-2">ID: --</span>
+            </div>
+            <i class="fas fa-hospital-user fa-3x"></i>
         </div>
-        <div id="patient-name" class="h4 font-weight-bold text-primary">--</div>
     </div>
 
-    <div id="scene-alert" class="alert shadow-sm mb-4" role="alert" style="display:none;">
-        <h4 class="alert-heading"><i id="scene-icon" class="fas mr-2"></i> <span id="scene-title"></span></h4>
+    <div id="scene-box" class="alert shadow-sm mb-4" style="display:none; border-radius: 10px;">
+        <h4 class="font-weight-bold"><i id="scene-icon" class="fas mr-2"></i> <span id="scene-title"></span></h4>
         <p id="scene-msg" class="mb-0"></p>
     </div>
 
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div id="card-bmi" class="card shadow-sm h-100 py-2">
-                <div class="card-body text-center">
-                    <div class="text-xs font-weight-bold text-uppercase mb-1">BMI</div>
-                    <div id="val-bmi" class="h2 mb-0 font-weight-bold text-gray-800">--</div>
-                    <div class="text-muted small">39156-5</div>
-                </div>
+    <div class="row mb-4 text-center">
+        <div class="col-md-4">
+            <div id="card-bmi" class="card shadow-sm h-100 py-3">
+                <div class="text-muted small">BMI (39156-5)</div>
+                <div id="val-bmi" class="metric-val text-gray-800">--</div>
             </div>
         </div>
-        <div class="col-md-4 mb-4">
-            <div id="card-hba1c" class="card shadow-sm h-100 py-2">
-                <div class="card-body text-center">
-                    <div class="text-xs font-weight-bold text-uppercase mb-1">HbA1c</div>
-                    <div id="val-hba1c" class="h2 mb-0 font-weight-bold text-gray-800">--</div>
-                    <div class="text-muted small">4548-4</div>
-                </div>
+        <div class="col-md-4">
+            <div id="card-hba1c" class="card shadow-sm h-100 py-3">
+                <div class="text-muted small">HbA1c (4548-4)</div>
+                <div id="val-hba1c" class="metric-val text-gray-800">--</div>
             </div>
         </div>
-        <div class="col-md-4 mb-4">
-            <div id="card-ldl" class="card shadow-sm h-100 py-2">
-                <div class="card-body text-center">
-                    <div class="text-xs font-weight-bold text-uppercase mb-1">LDL</div>
-                    <div id="val-ldl" class="h2 mb-0 font-weight-bold text-gray-800">--</div>
-                    <div class="text-muted small">13457-7</div>
-                </div>
+        <div class="col-md-4">
+            <div id="card-ldl" class="card shadow-sm h-100 py-3">
+                <div class="text-muted small">LDL (13457-7)</div>
+                <div id="val-ldl" class="metric-val text-gray-800">--</div>
             </div>
         </div>
     </div>
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-white font-weight-bold text-primary">臨床資源列表 (依 PAS 規範存取)</div>
+    <div class="card shadow-sm">
+        <div class="card-header bg-white font-weight-bold">臨床關聯資源 (Condition / ServiceRequest)</div>
         <div class="card-body p-0">
             <table class="table table-hover mb-0">
-                <thead class="bg-light">
-                    <tr><th>類別</th><th>臨床內容</th><th>代碼系統</th></tr>
-                </thead>
-                <tbody id="res-table"></tbody>
+                <tbody id="res-list"></tbody>
             </table>
         </div>
     </div>
+    <button onclick="window.print()" class="btn btn-dark btn-block mt-4 shadow"><i class="fas fa-print mr-2"></i> 產出臨床導航報告</button>
 </div>
 
 <script>
     FHIR.oauth2.ready().then(client => {
-        // 更新顯示患者 ID 以符合審查介面感
-        document.getElementById('patient-id').innerText = `Patient ID: ${client.patient.id}`;
-
         client.patient.read().then(p => {
-            document.getElementById('patient-name').innerText = p.name ? p.name[0].text : "匿名患者";
+            document.getElementById('p-name').innerText = p.name[0].text;
+            document.getElementById('p-id').innerText = `Patient ID: ${p.id}`;
         });
 
-        // 依照 Scopes 權限請求資源
-        const requests = [
-            client.request(`Observation?patient=${client.patient.id}`),
-            client.request(`Condition?patient=${client.patient.id}`),
-            client.request(`ServiceRequest?patient=${client.patient.id}`)
-        ];
+        const q = `patient=${client.patient.id}`;
+        Promise.all([
+            client.request(`Observation?${q}`),
+            client.request(`Condition?${q}`),
+            client.request(`ServiceRequest?${q}`)
+        ]).then(([obs, cond, srv]) => {
+            const obsArr = obs.entry ? obs.entry.map(e => e.resource) : [];
+            const condArr = cond.entry ? cond.entry.map(e => e.resource) : [];
+            const srvArr = srv.entry ? srv.entry.map(e => e.resource) : [];
 
-        Promise.all(requests).then(([obs, cond, srv]) => {
-            const obsList = obs.entry ? obs.entry.map(e => e.resource) : [];
-            const condList = cond.entry ? cond.entry.map(e => e.resource) : [];
-            const srvList = srv.entry ? srv.entry.map(e => e.resource) : [];
+            // 數據抓取邏析
+            const getVal = (code) => {
+                const o = obsArr.find(x => x.code?.coding?.some(c => c.code === code));
+                return o ? o.valueQuantity.value : null;
+            };
 
-            // 數據提取
-            const bmi = getVal(obsList, '39156-5');
-            const hba1c = getVal(obsList, '4548-4');
-            const ldl = getVal(obsList, '13457-7');
+            const bmi = getVal('39156-5'), hba1c = getVal('4548-4'), ldl = getVal('13457-7');
 
-            // UI 更新
-            updateMetric('bmi', bmi, 27, 24, " kg/m²");
-            updateMetric('hba1c', hba1c, 6.5, 5.7, " %");
-            updateMetric('ldl', ldl, 130, 100, " mg/dL");
+            // UI 呈現與分流
+            if (bmi) updateCard('bmi', bmi, 27, 24, "kg/m²");
+            if (hba1c) updateCard('hba1c', hba1c, 6.5, 5.7, "%");
+            if (ldl) updateCard('ldl', ldl, 130, 100, "mg/dL");
 
-            // 場景識別 (Jason A, B, C 分流)
-            identifyScene(bmi, hba1c, ldl, condList);
+            // 場景自動嗅覺 (Jason A, B, C)
+            const scene = document.getElementById('scene-box');
+            if (bmi >= 27 || condArr.some(c => c.code?.coding?.some(d => d.code === 'E66.9'))) {
+                showScene("肥胖管理場景 (Jason A)", "偵測到 BMI 異常與肥胖診斷，系統已連結營養師介入建議。", "alert-danger", "fa-weight");
+            } else if (hba1c >= 5.7) {
+                showScene("糖尿病前期預警 (Jason B)", "HbA1c 數據落在 5.7-6.4% 風險區，建議啟動居家血糖監測。", "alert-warning", "fa-exclamation-triangle");
+            } else if (ldl > 130) {
+                showScene("血脂風險管理 (Jason C)", "低密度脂蛋白數值超標，已關聯定期血脂追蹤醫囑計畫。", "alert-info", "fa-heartbeat");
+            }
 
             // 列表渲染
-            renderTable(condList, srvList);
+            const list = document.getElementById('res-list');
+            condArr.forEach(c => list.innerHTML += `<tr><td><span class="badge badge-danger">診斷</span></td><td>${c.code.coding[0].display}</td></tr>`);
+            srvArr.forEach(s => list.innerHTML += `<tr><td><span class="badge badge-primary">醫囑</span></td><td>${s.code.text || s.code.coding[0].display}</td></tr>`);
         });
     });
 
-    function getVal(list, code) {
-        const item = list.find(o => o.code?.coding?.some(c => c.code === code));
-        return item ? item.valueQuantity?.value : null;
-    }
-
-    function updateMetric(id, val, high, warn, unit) {
+    function updateCard(id, val, h, w, unit) {
         const el = document.getElementById(`val-${id}`);
         const card = document.getElementById(`card-${id}`);
-        if (val !== null) {
-            el.innerText = val + unit;
-            if (val >= high) card.classList.add('card-red');
-            else if (val >= warn) card.classList.add('card-yellow');
-            else card.classList.add('card-green');
-        }
+        el.innerText = `${val} ${unit}`;
+        if (val >= h) card.classList.add('card-red');
+        else if (val >= w) card.classList.add('card-yellow');
+        else card.classList.add('card-green');
     }
 
-    function identifyScene(bmi, hba1c, ldl, conds) {
-        const alertBox = document.getElementById('scene-alert');
-        let config = null;
-
-        if (conds.some(c => c.code?.coding?.some(d => d.code === 'E66.9')) || bmi >= 27) {
-            config = { title: "肥胖照護場景", msg: "檢出 BMI 異常及肥胖診斷，系統已對應健保營養計畫。", class: "alert-danger", icon: "fa-weight" };
-        } else if (hba1c >= 5.7) {
-            config = { title: "糖尿病前期預警", msg: "HbA1c 指標顯示風險，建議列入自主管理個案。", class: "alert-warning", icon: "fa-tint" };
-        } else if (ldl > 130) {
-            config = { title: "血脂異常管理", msg: "LDL 數值過高，建議追蹤心血管疾病風險。", class: "alert-info", icon: "fa-heart" };
-        }
-
-        if (config) {
-            alertBox.className = `alert shadow-sm mb-4 ${config.class}`;
-            document.getElementById('scene-title').innerText = config.title;
-            document.getElementById('scene-msg').innerText = config.msg;
-            document.getElementById('scene-icon').className = `fas ${config.icon} mr-2`;
-            alertBox.style.display = 'block';
-        }
-    }
-
-    function renderTable(conds, srvs) {
-        const tbody = document.getElementById('res-table');
-        conds.forEach(c => {
-            tbody.innerHTML += `<tr><td><span class="badge badge-danger">Condition</span></td><td>${c.code.coding[0].display}</td><td>ICD-10-CM</td></tr>`;
-        });
-        srvs.forEach(s => {
-            tbody.innerHTML += `<tr><td><span class="badge badge-primary">ServiceRequest</span></td><td>${s.code.text || s.code.coding[0].display}</td><td>SNOMED/PAS</td></tr>`;
-        });
+    function showScene(t, m, c, i) {
+        const b = document.getElementById('scene-box');
+        b.className = `alert shadow-sm mb-4 ${c}`;
+        document.getElementById('scene-title').innerText = t;
+        document.getElementById('scene-msg').innerText = m;
+        document.getElementById('scene-icon').className = `fas ${i} mr-2`;
+        b.style.display = 'block';
     }
 </script>
-
 </body>
 </html>

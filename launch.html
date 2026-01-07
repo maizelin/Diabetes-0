@@ -7,30 +7,28 @@
 </head>
 <body>
     <script>
-        FHIR.oauth2.authorize({
-            // 1. 請填入您在 Sandbox 註冊 App 時獲得的 Client ID
-            "clientId": "your_client_id_here", 
+        // 取得網址列參數
+        const params = new URLSearchParams(window.location.search);
+        const iss = params.get('iss');
+        const pId = params.get('patientId');
 
-            // 2. 依照 PAS 規範定義精確權限，避免使用 patient/*.*
+        FHIR.oauth2.authorize({
+            "clientId": "your-client-id-here", // ⚠️ 請更換為你在 Sandbox 註冊的 Client ID
             "scope": [
-                "openid",
-                "profile",
-                "launch",
-                "online_access",
+                "openid", "profile", "launch", "online_access",
                 "patient/Patient.read",
                 "patient/Observation.read",
                 "patient/Condition.read",
-                "patient/ServiceRequest.read" // PAS 規範中最重要的權限：讀取醫囑/請求
+                "patient/ServiceRequest.read" // 符合健保 PAS 規範之 Scopes
             ].join(" "),
-
-            // 3. 授權完後的跳轉目標（剛才做好的智慧判讀頁面）
-            "redirectUri": "index.html" 
+            "redirectUri": "index.html",
+            "iss": iss,
+            "patientId": pId // 指定點選的 Jason ID
         });
     </script>
-    <div style="text-align: center; margin-top: 50px; font-family: sans-serif;">
-        <div class="spinner-border text-primary"></div>
-        <h2>正在連線至衛福部 FHIR 伺服器...</h2>
-        <p>正在依照 PAS 規範請求臨床資料存取權限</p>
+    <div style="text-align: center; margin-top: 100px; font-family: Arial, sans-serif;">
+        <div style="font-size: 24px; color: #007bff;">正在連線衛福部 FHIR Server...</div>
+        <p>正在根據 PAS 規範請求臨床資料存取權限</p>
     </div>
 </body>
 </html>
