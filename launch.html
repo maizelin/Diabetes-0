@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>SMART Launch</title>
+    <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
+</head>
+<body>
+    <script>
+        // 初始化授權請求
+        FHIR.oauth2.authorize({
+            "clientId": "your_client_id_from_sandbox", // 比賽註冊得到的 Client ID
+            "scope": "patient/*.read launch online_access openid profile",
+            "redirectUri": "index.html" // 授權後跳回的頁面
+        });
+    </script>
+</body>
+</html>
