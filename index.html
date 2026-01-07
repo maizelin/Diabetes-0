@@ -3,153 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>三高代謝風險監測系統 - SMART on FHIR</title>
+    <title>三高智慧照護導航 App - SMART on FHIR</title>
     <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     
     <style>
-        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
-        .patient-info { background: #e8f4fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; }
-        .dashboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        .card { padding: 20px; border-radius: 10px; text-align: center; color: white; transition: transform 0.2s; }
-        .card:hover { transform: scale(1.05); }
-        .danger { background-color: #e74c3c; }
-        .warning { background-color: #f39c12; }
-        .success { background-color: #27ae60; }
-        .metric-value { font-size: 2.5em; font-weight: bold; margin: 10px 0; }
-        .btn-group { margin-top: 30px; text-align: center; }
-        button { padding: 12px 25px; font-size: 16px; cursor: pointer; border: none; border-radius: 5px; background: #3498db; color: white; }
-        button:hover { background: #2980b9; }
-        #loading { text-align: center; font-size: 1.2em; color: #666; }
-    </style>
-</head>
-<body>
-
-<div class="container" id="app-content" style="display:none;">
-    <h1>三高代謝風險追蹤 App</h1>
-    
-    <div class="patient-info">
-        <div>
-            <strong>姓名：</strong> <span id="pat-name">載入中...</span><br>
-            <strong>身分證：</strong> <span id="pat-id">載入中...</span>
-        </div>
-        <div>
-            <strong>主治醫師：</strong> 王大夫 (Practitioner/690730)
-        </div>
-    </div>
-
-    <div class="dashboard">
-        <div id="bmi-card" class="card">
-            <div>體重指標 (BMI)</div>
-            <div class="metric-value" id="bmi-val">--</div>
-            <div id="bmi-status">偵測中</div>
-        </div>
-        <div id="hba1c-card" class="card">
-            <div>糖化血色素 (HbA1c)</div>
-            <div class="metric-value" id="hba1c-val">--</div>
-            <div id="hba1c-status">偵測中</div>
-        </div>
-        <div id="ldl-card" class="card">
-            <div>低密度脂蛋白 (LDL)</div>
-            <div class="metric-value" id="ldl-val">--</div>
-            <div id="ldl-status">偵測中</div>
-        </div>
-    </div>
-
-    <div class="btn-group">
-        <button onclick="downloadReport()">下載正式 FHIR 臨床報告 (PDF)</button>
-    </div>
-</div>
-
-<div id="loading">正在連線至衛福部 Sandbox 並取得 Jason 的資料...</div>
-
-<script>
-    let currentData = { name: '', id: '', metrics: {} };
-
-    // 初始化 SMART on FHIR
-    FHIR.oauth2.ready().then(async (client) => {
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('app-content').style.display = 'block';
-
-        // 1. 取得患者基本資料
-        const patient = await client.patient.read();
-        currentData.name = patient.name[0].text;
-        currentData.id = patient.identifier[0].value;
-        document.getElementById('pat-name').innerText = currentData.name;
-        document.getElementById('pat-id').innerText = currentData.id;
-
-        // 2. 取得三高 Observation (根據 Jason A, B, C 的不同 LOINC)
-        const query = `Observation?patient=${client.patient.id}`;
-        const obsv = await client.request(query);
+        :root { --primary: #2c3e50; --accent: #3498db; --danger: #e74c3c; --warning: #f39c12; --success: #27ae60; }
+        body { font-family: "Segoe UI", "Microsoft JhengHei", sans-serif; background-color: #f0f2f5; margin: 0; color: #333; }
         
-        processObservations(obsv.entry || []);
-    }).catch(console.error);
-
-    function processObservations(entries) {
-        entries.forEach(item => {
-            const obs = item.resource;
-            const code = obs.code.coding[0].code;
-            const val = obs.valueQuantity.value;
-
-            if (code === '39156-5') updateCard('bmi', val, 24, 27, 'kg/m²');
-            if (code === '4548-4') updateCard('hba1c', val, 5.7, 6.5, '%');
-            if (code === '13457-7') updateCard('ldl', val, 130, 160, 'mg/dL');
-        });
-    }
-
-    function updateCard(type, val, warn, danger, unit) {
-        const valEl = document.getElementById(`${type}-val`);
-        const statusEl = document.getElementById(`${type}-status`);
-        const cardEl = document.getElementById(`${type}-card`);
+        /* Layout */
+        .container { max-width: 1100px; margin: 20px auto; display: grid; grid-template-columns: 300px 1fr; gap: 20px; padding: 0 20px; }
         
-        valEl.innerText = val;
-        currentData.metrics[type] = { val, unit };
+        /* Sidebar - Patient Info */
+        .sidebar { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); height: fit-content; }
+        .sidebar h2 { color: var(--primary); font-size: 1.2em; border-left: 4px solid var(--accent); padding-left: 10px; }
+        .info-item { margin-bottom: 15px; font-size: 0.95em; }
+        .info-label { color: #888; display: block; margin-bottom: 3px; }
 
-        if (val >= danger) {
-            cardEl.className = 'card danger';
-            statusEl.innerText = '高風險';
-            currentData.metrics[type].status = '高風險';
-        } else if (val >= warn) {
-            cardEl.className = 'card warning';
-            statusEl.innerText = '注意';
-            currentData.metrics[type].status = '注意';
-        } else {
-            cardEl.className = 'card success';
-            statusEl.innerText = '正常';
-            currentData.metrics[type].status = '正常';
-        }
-    }
-
-    function downloadReport() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+        /* Main Content */
+        .main-content { display: flex; flex-direction: column; gap: 20px; }
+        .header-section { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         
-        doc.setFontSize(18);
-        doc.text("TW Core SMART App - 臨床檢查報告", 14, 20);
-        
-        doc.setFontSize(10);
-        doc.text(`姓名: ${currentData.name}`, 14, 30);
-        doc.text(`身分證: ${currentData.id}`, 14, 35);
-
-        const rows = Object.keys(currentData.metrics).map(key => [
-            key.toUpperCase(),
-            currentData.metrics[key].val,
-            currentData.metrics[key].unit,
-            currentData.metrics[key].status
-        ]);
-
-        doc.autoTable({
-            startY: 45,
-            head: [['項目', '數值', '單位', '判讀']],
-            body: rows,
-        });
-
-        doc.save(`Jason_Report.pdf`);
-    }
-</script>
-
-</body>
-</html>
+        /* Dashboard Cards */
+        .dashboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .card { background: white; padding: 20px; border-radius: 12px; border-top: 5px solid #ddd; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: 0.3s; }
+        .card.danger { border-top-color: var(--danger); }
+        .card.warning {
