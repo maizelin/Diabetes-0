@@ -2,31 +2,189 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>三高智慧照護導航 App - SMART on FHIR</title>
+    <title>三高智慧照護導航 App</title>
     <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
     <style>
-        :root { --primary: #2c3e50; --accent: #3498db; --danger: #e74c3c; --warning: #f39c12; --success: #27ae60; }
-        body { font-family: "Segoe UI", "Microsoft JhengHei", sans-serif; background-color: #f0f2f5; margin: 0; color: #333; }
-        
-        /* Layout */
-        .container { max-width: 1100px; margin: 20px auto; display: grid; grid-template-columns: 300px 1fr; gap: 20px; padding: 0 20px; }
-        
-        /* Sidebar - Patient Info */
-        .sidebar { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); height: fit-content; }
-        .sidebar h2 { color: var(--primary); font-size: 1.2em; border-left: 4px solid var(--accent); padding-left: 10px; }
-        .info-item { margin-bottom: 15px; font-size: 0.95em; }
-        .info-label { color: #888; display: block; margin-bottom: 3px; }
+        .card-red { border-left: 5px solid #e74a3b; }
+        .card-yellow { border-left: 5px solid #f6c23e; }
+        .card-green { border-left: 5px solid #1cc88a; }
+        .loading { display: flex; justify-content: center; align-items: center; height: 100vh; font-size: 1.5rem; }
+    </style>
+</head>
+<body class="bg-light">
 
-        /* Main Content */
-        .main-content { display: flex; flex-direction: column; gap: 20px; }
-        .header-section { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        
-        /* Dashboard Cards */
-        .dashboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-        .card { background: white; padding: 20px; border-radius: 12px; border-top: 5px solid #ddd; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: 0.3s; }
-        .card.danger { border-top-color: var(--danger); }
-        .card.warning {
+    <div id="loader" class="loading">
+        <div class="spinner-border text-primary mr-3"></div> 正在連線衛福部 FHIR Server 並識別臨床場景...
+    </div>
+
+    <div id="content" class="container-fluid py-4" style="display:none;">
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">三高智慧照護導航</h1>
+            <div id="patient-info" class="h5 font-weight-bold text-primary">載入中...</div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12" id="scene-container">
+                </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div id="card-bmi" class="card shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">身體質量指數 (BMI)</div>
+                                <div id="val-bmi" class="h5 mb-0 font-weight-bold text-gray-800">--</div>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-weight fa-2x text-gray-300"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div id="card-hba1c" class="card shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">糖化血色素 (HbA1c)</div>
+                                <div id="val-hba1c" class="h5 mb-0 font-weight-bold text-gray-800">--</div>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-tint fa-2x text-gray-300"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div id="card-ldl" class="card shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">低密度脂蛋白 (LDL)</div>
+                                <div id="val-ldl" class="h5 mb-0 font-weight-bold text-gray-800">--</div>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-vial fa-2x text-gray-300"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">臨床診斷與後續計畫 (FHIR Resources)</h6>
+                        <button onclick="window.print()" class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i> 匯出 PDF</button>
+                    </div>
+                    <div class="card-body">
+                        <ul id="fhir-list" class="list-group list-group-flush">
+                            </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        FHIR.oauth2.ready().then(client => {
+            // 1. 抓取基本資料
+            client.patient.read().then(patient => {
+                const name = patient.name ? patient.name[0].text : "未知患者";
+                document.getElementById('patient-info').innerText = `目前患者：${name} (ID: ${patient.id})`;
+            });
+
+            // 2. 抓取 Observation (三高數據) 與 Condition (診斷)
+            const query = new URLSearchParams();
+            query.set("patient", client.patient.id);
+            
+            Promise.all([
+                client.request(`Observation?patient=${client.patient.id}`),
+                client.request(`Condition?patient=${client.patient.id}`),
+                client.request(`ServiceRequest?patient=${client.patient.id}`)
+            ]).then(([observations, conditions, services]) => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+
+                const obsList = observations.entry ? observations.entry.map(e => e.resource) : [];
+                const condList = conditions.entry ? conditions.entry.map(e => e.resource) : [];
+                const srvList = services.entry ? services.entry.map(e => e.resource) : [];
+
+                // 解析數值
+                const bmi = obsList.find(o => o.code.coding.some(c => c.code === '39156-5'))?.valueQuantity?.value;
+                const hba1c = obsList.find(o => o.code.coding.some(c => c.code === '4548-4'))?.valueQuantity?.value;
+                const ldl = obsList.find(o => o.code.coding.some(c => c.code === '13457-7'))?.valueQuantity?.value;
+
+                // 顯示數值與變色邏輯
+                updateMetric('bmi', bmi, 27, 24);
+                updateMetric('hba1c', hba1c, 6.5, 5.7);
+                updateMetric('ldl', ldl, 130, 100);
+
+                // 識別臨床場景 (關鍵邏輯)
+                identifyScene(bmi, hba1c, ldl, condList);
+
+                // 渲染資源列表
+                renderResources(condList, srvList);
+            });
+        }).catch(console.error);
+
+        function updateMetric(id, val, high, warning) {
+            const el = document.getElementById(`val-${id}`);
+            const card = document.getElementById(`card-${id}`);
+            if (val) {
+                el.innerText = val + (id === 'ldl' ? ' mg/dL' : (id === 'hba1c' ? ' %' : ''));
+                if (val >= high) card.classList.add('card-red');
+                else if (val >= warning) card.classList.add('card-yellow');
+                else card.classList.add('card-green');
+            }
+        }
+
+        function identifyScene(bmi, hba1c, ldl, conds) {
+            let scene = { title: "一般健康追蹤", color: "text-secondary", tip: "數據均在理想範圍內，請維持良好的生活與飲食習慣。", icon: "fa-check-circle" };
+            
+            // 優先識別 Jason A (肥胖 + ICD-10)
+            const hasObesity = conds.some(c => c.code?.coding?.some(d => d.code === 'E66.9'));
+            if (hasObesity || bmi >= 27) {
+                scene = { title: "代謝症候群 - 肥胖照護場景", color: "text-danger", tip: "系統識別患者為肥胖族群，已連結營養諮詢醫囑，建議啟動體重管理流程。", icon: "fa-user-shield" };
+            } 
+            // 識別 Jason B (糖尿病前期)
+            else if (hba1c >= 5.7 && hba1c < 6.5) {
+                scene = { title: "糖尿病前期 - 預防場景", color: "text-warning", tip: "系統識別 HbA1c 異常。根據預防醫學指引，建議進行居家血糖監測與飲食衛教。", icon: "fa-exclamation-triangle" };
+            }
+            // 識別 Jason C (高血脂)
+            else if (ldl > 130) {
+                scene = { title: "高血脂症 - 風險管理場景", color: "text-danger", tip: "LDL 數值過高。系統建議定期追蹤血脂報告，預防冠狀動脈疾病風險。", icon: "fa-heartbeat" };
+            }
+
+            document.getElementById('scene-container').innerHTML = `
+                <div class="card shadow border-left-primary">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <i class="fas ${scene.icon} fa-3x ${scene.color} mr-4"></i>
+                            <div>
+                                <div class="font-weight-bold text-primary text-uppercase small">AI 自動識別臨床場景</div>
+                                <div class="h4 font-weight-bold ${scene.color}">${scene.title}</div>
+                                <div class="text-gray-800">${scene.tip}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderResources(conds, srvs) {
+            const list = document.getElementById('fhir-list');
+            conds.forEach(c => {
+                list.innerHTML += `<li class="list-group-item"><span class="badge badge-info mr-2">診斷</span> ${c.code.coding[0].display} (${c.code.coding[0].code})</li>`;
+            });
+            srvs.forEach(s => {
+                list.innerHTML += `<li class="list-group-item"><span class="badge badge-success mr-2">醫囑</span> ${s.code.text || s.code.coding[0].display}</li>`;
+            });
+        }
+    </script>
+</body>
+</html>
